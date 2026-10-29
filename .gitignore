@@ -218,3 +218,20 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+
+# Raw datasets
+data/raw/*.csv
+
+# Processed datasets
+data/processed/*.parquet
+
+# Python
+__pycache__/
+*.pyc
+
+# Streamlit
+.streamlit/
+
+# Virtual environments
+.venv/
