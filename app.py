@@ -8,12 +8,14 @@ st.set_page_config(
 
 st.title("⚡ EV Market Explorer")
 
-st.markdown("""
-Explore electric vehicle registrations across the United States.
+st.info(
+    """
+    Use the navigation menu on the left.
 
-Use the navigation menu on the left to:
-- View Overview
-- Explore Maps
-- Search Vehicles
-- View Analytics
-""")
+    👉 Insights
+
+    👉 Search
+
+    👉 Map
+    """
+)
