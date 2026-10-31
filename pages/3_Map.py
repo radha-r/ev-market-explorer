@@ -1,7 +1,7 @@
 import streamlit as st
 
-from utils.data_loader import load_data
-from utils.filters import apply_filters
+from core.data import load_data
+from core.filters import apply_filters
 
 # ==================================================
 # PAGE CONFIG

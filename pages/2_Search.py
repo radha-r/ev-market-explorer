@@ -1,6 +1,6 @@
 import streamlit as st
-from utils.data_loader import load_data
-from utils.footer import show_footer
+from core.data import load_data
+from core.footer import show_footer
 
 st.title("🚗 Vehicle Search")
 

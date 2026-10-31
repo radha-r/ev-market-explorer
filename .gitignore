@@ -230,6 +230,8 @@ data/raw/*
 # Python
 __pycache__/
 *.pyc
+*.py[cod]
+*$py.class
 
 # Local environment
 .venv/
