@@ -167,7 +167,7 @@ with left:
 
     st.dataframe(
         top_cities,
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
         height=450
     )
@@ -191,7 +191,7 @@ with right:
 
     st.dataframe(
         top_makes,
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
         height=450
     )

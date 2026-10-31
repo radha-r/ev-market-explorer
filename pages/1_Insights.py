@@ -4,43 +4,19 @@ import streamlit as st
 
 from utils.data_loader import load_data
 from utils.filters import apply_filters
-import polars as pl
-import plotly.express as px
-import streamlit as st
-
-from utils.data_loader import load_data
-from utils.filters import apply_filters
+from utils.footer import show_footer
 
 # ==================================================
-# PAGE CONFIG
+# LOAD
 # ==================================================
 
-st.set_page_config(
-    page_title="EV Market Insights",
-    page_icon="⚡",
-    layout="wide"
-)
-
-st.title("⚡ EV Market Insights")
-
-st.markdown("""
-Explore EV adoption trends, market share,
-vehicle technology, utility distribution,
-and geographic intelligence.
-""")
-
-# ==================================================
-# LOAD DATA
-# ==================================================
+st.title("⚡ EV Market Intelligence")
 
 df = load_data()
-
 df = apply_filters(df)
 
 if len(df) == 0:
-    st.warning(
-        "No records match the selected filters."
-    )
+    st.warning("No records match filters.")
     st.stop()
 
 # ==================================================
@@ -50,22 +26,22 @@ if len(df) == 0:
 total_vehicles = len(df)
 
 unique_makes = df["Make"].n_unique()
-
 unique_models = df["Model"].n_unique()
-
 unique_cities = df["City"].n_unique()
 
-unique_counties = df["County"].n_unique()
-
-avg_range_value = (
-    df["Electric Range"]
-    .fill_null(0)
-    .mean()
+price_df = df.filter(
+    pl.col("Sale Price") > 0
 )
 
-avg_range = (
-    round(avg_range_value, 1)
-    if avg_range_value is not None
+avg_price = (
+    round(price_df["Sale Price"].mean(), 0)
+    if len(price_df) > 0
+    else 0
+)
+
+median_price = (
+    round(price_df["Sale Price"].median(), 0)
+    if len(price_df) > 0
     else 0
 )
 
@@ -73,33 +49,21 @@ top_make = (
     df.group_by("Make")
     .len()
     .sort("len", descending=True)
-    .row(0)
+    .row(0)[0]
 )
 
 top_model = (
     df.group_by("Model")
     .len()
     .sort("len", descending=True)
-    .row(0)
-)
-
-bev_count = len(
-    df.filter(
-        pl.col("Electric Vehicle Type")
-        .str.contains("Battery")
-    )
-)
-
-bev_pct = round(
-    (bev_count / total_vehicles) * 100,
-    1
+    .row(0)[0]
 )
 
 # ==================================================
-# KPI ROW
+# KPI ROW 1
 # ==================================================
 
-c1, c2, c3, c4, c5, c6 = st.columns(6)
+c1, c2, c3, c4 = st.columns(4)
 
 c1.metric(
     "Vehicles",
@@ -107,28 +71,44 @@ c1.metric(
 )
 
 c2.metric(
-    "Top Make",
-    top_make[0]
+    "Manufacturers",
+    unique_makes
 )
 
 c3.metric(
-    "Top Model",
-    top_model[0]
+    "Models",
+    unique_models
 )
 
 c4.metric(
-    "Avg Range",
-    f"{avg_range}"
-)
-
-c5.metric(
     "Cities",
     unique_cities
 )
 
-c6.metric(
-    "BEV %",
-    f"{bev_pct}%"
+# ==================================================
+# KPI ROW 2
+# ==================================================
+
+c1, c2, c3, c4 = st.columns(4)
+
+c1.metric(
+    "Median Price",
+    f"${median_price:,.0f}"
+)
+
+c2.metric(
+    "Average Price",
+    f"${avg_price:,.0f}"
+)
+
+c3.metric(
+    "Top Make",
+    top_make
+)
+
+c4.metric(
+    "Top Model",
+    top_model
 )
 
 st.divider()
@@ -140,7 +120,8 @@ st.divider()
 top_makes = (
     df.group_by("Make")
     .len()
-    .sort("len", descending=True)
+    .rename({"len": "Vehicles"})
+    .sort("Vehicles", descending=True)
     .head(15)
 )
 
@@ -151,113 +132,10 @@ top_makes = (
 top_models = (
     df.group_by("Model")
     .len()
-    .sort("len", descending=True)
+    .rename({"len": "Vehicles"})
+    .sort("Vehicles", descending=True)
     .head(15)
 )
-
-# ==================================================
-# TREND
-# ==================================================
-
-year_trend = (
-    df.group_by("Model Year")
-    .len()
-    .sort("Model Year")
-)
-
-# ==================================================
-# CITY HEATMAP DATA
-# ==================================================
-
-city_heatmap = (
-    df.group_by(["City", "County"])
-    .len()
-    .sort("len", descending=True)
-    .head(50)
-)
-
-# ==================================================
-# EV TYPES
-# ==================================================
-
-ev_types = (
-    df.group_by("Electric Vehicle Type")
-    .len()
-)
-
-# ==================================================
-# TOP CITIES
-# ==================================================
-
-top_cities = (
-    df.group_by("City")
-    .len()
-    .sort("len", descending=True)
-    .head(20)
-)
-
-# ==================================================
-# TOP COUNTIES
-# ==================================================
-
-top_counties = (
-    df.group_by("County")
-    .len()
-    .sort("len", descending=True)
-    .head(20)
-)
-
-# ==================================================
-# TOP ZIPS
-# ==================================================
-
-top_zips = (
-    df.group_by("Postal Code")
-    .len()
-    .sort("len", descending=True)
-    .head(20)
-)
-
-# ==================================================
-# UTILITIES
-# ==================================================
-
-utility_stats = (
-    df.group_by("Electric Utility")
-    .len()
-    .sort("len", descending=True)
-    .head(15)
-)
-
-# ==================================================
-# CAFV
-# ==================================================
-
-cafv_stats = (
-    df.group_by(
-        "Clean Alternative Fuel Vehicle (CAFV) Eligibility"
-    )
-    .len()
-)
-
-# ==================================================
-# RANGE BY MAKE
-# ==================================================
-
-range_by_make = (
-    df.group_by("Make")
-    .agg(
-        pl.col("Electric Range")
-        .mean()
-        .alias("avg_range")
-    )
-    .sort("avg_range", descending=True)
-    .head(15)
-)
-
-# ==================================================
-# TOP MAKES / MODELS
-# ==================================================
 
 left, right = st.columns(2)
 
@@ -266,14 +144,19 @@ with left:
     fig = px.bar(
         top_makes.to_pandas(),
         x="Make",
-        y="len",
-        color="len",
+        y="Vehicles",
+        color="Vehicles",
+        text="Vehicles",
         title="Top Manufacturers"
+    )
+
+    fig.update_traces(
+        textposition="outside"
     )
 
     st.plotly_chart(
         fig,
-        use_container_width=True
+        width="stretch"
     )
 
 with right:
@@ -281,18 +164,23 @@ with right:
     fig = px.bar(
         top_models.to_pandas(),
         x="Model",
-        y="len",
-        color="len",
+        y="Vehicles",
+        color="Vehicles",
+        text="Vehicles",
         title="Top Models"
+    )
+
+    fig.update_traces(
+        textposition="outside"
     )
 
     st.plotly_chart(
         fig,
-        use_container_width=True
+        width="stretch"
     )
 
 # ==================================================
-# MARKET SHARE / EV TYPES
+# MARKET SHARE + PRICE HISTOGRAM
 # ==================================================
 
 left, right = st.columns(2)
@@ -302,73 +190,218 @@ with left:
     fig = px.treemap(
         top_makes.to_pandas(),
         path=["Make"],
-        values="len",
-        title="Market Share Treemap"
+        values="Vehicles",
+        title="Market Share"
     )
 
     st.plotly_chart(
         fig,
-        use_container_width=True
+        width="stretch"
     )
 
 with right:
 
-    fig = px.pie(
-        ev_types.to_pandas(),
-        names="Electric Vehicle Type",
-        values="len",
-        title="BEV vs PHEV"
+    fig = px.histogram(
+        price_df.to_pandas(),
+        x="Sale Price",
+        nbins=40,
+        title="Price Distribution"
     )
 
     st.plotly_chart(
         fig,
-        use_container_width=True
+        width="stretch"
     )
 
 # ==================================================
-# TRENDS
+# SEASONALITY HEATMAP
 # ==================================================
+
+st.subheader(
+    "📅 Vehicle Registrations by Month and Year"
+)
+
+seasonality = (
+    df.group_by(
+        [
+            "Transaction Month Name",
+            "Transaction Year"
+        ]
+    )
+    .len()
+    .rename({"len": "Vehicles"})
+)
+
+heatmap_pd = (
+    seasonality
+    .to_pandas()
+    .pivot(
+        index="Transaction Month Name",
+        columns="Transaction Year",
+        values="Vehicles"
+    )
+)
+
+heatmap_pd = heatmap_pd.reindex(
+    [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+    ]
+)
+
+fig = px.imshow(
+    heatmap_pd,
+    aspect="auto",
+    color_continuous_scale="Viridis",
+    title="Seasonality Heatmap"
+)
+
+st.plotly_chart(
+    fig,
+    width="stretch"
+)
+
+# ==================================================
+# TRANSACTIONS
+# ==================================================
+
+txn_type = (
+    df.group_by(
+        "Transaction Type"
+    )
+    .len()
+    .rename({"len": "Vehicles"})
+)
+
+new_used = (
+    df.group_by(
+        "New or Used Vehicle"
+    )
+    .len()
+    .rename({"len": "Vehicles"})
+)
 
 left, right = st.columns(2)
 
 with left:
 
-    fig = px.line(
-        year_trend.to_pandas(),
-        x="Model Year",
-        y="len",
-        markers=True,
-        title="Registration Trend"
+    fig = px.pie(
+        txn_type.to_pandas(),
+        names="Transaction Type",
+        values="Vehicles",
+        title="Transaction Type"
     )
 
     st.plotly_chart(
         fig,
-        use_container_width=True
+        width="stretch"
     )
 
 with right:
 
-    city_heatmap_pd = (
-        df.group_by(["City", "County"])
-        .len()
-        .sort("len", descending=True)
-        .head(10)
+    fig = px.pie(
+        new_used.to_pandas(),
+        names="New or Used Vehicle",
+        values="Vehicles",
+        title="New vs Used"
     )
 
+    st.plotly_chart(
+        fig,
+        width="stretch"
+    )
+
+# ==================================================
+# PRICE BY MAKE
+# ==================================================
+
+price_make = (
+    price_df.group_by("Make")
+    .agg(
+        pl.col("Sale Price")
+        .median()
+        .alias("Median Price")
+    )
+    .sort(
+        "Median Price",
+        descending=True
+    )
+    .head(15)
+)
+
+fig = px.bar(
+    price_make.to_pandas(),
+    x="Make",
+    y="Median Price",
+    color="Median Price",
+    text="Median Price",
+    title="Median Sale Price by Make"
+)
+
+fig.update_traces(
+    textposition="outside"
+)
+
+st.plotly_chart(
+    fig,
+    width="stretch"
+)
+
+# ==================================================
+# TOP CITIES
+# ==================================================
+
+city_stats = (
+    df.group_by(
+        ["City", "County"]
+    )
+    .len()
+    .rename({"len": "Vehicles"})
+    .sort(
+        "Vehicles",
+        descending=True
+    )
+    .head(10)
+)
+
+districts = (
+    df.group_by(
+        "Legislative District"
+    )
+    .len()
+    .rename({"len": "Vehicles"})
+    .sort(
+        "Vehicles",
+        descending=True
+    )
+    .head(15)
+)
+
+left, right = st.columns(2)
+
+with left:
+
     fig = px.scatter(
-        city_heatmap_pd,
-        x="len",
+        city_stats.to_pandas(),
+        x="Vehicles",
         y="City",
-        size="len",
-        color="len",
+        size="Vehicles",
+        color="Vehicles",
         hover_data=["County"],
-        title="Top 10 Cities by EV Registrations",
-        color_continuous_scale="Viridis",
-        size_max=60
+        title="Top 10 Cities"
     )
 
     fig.update_layout(
-        height=500,
         yaxis=dict(
             categoryorder="total ascending"
         )
@@ -376,98 +409,185 @@ with right:
 
     st.plotly_chart(
         fig,
-        use_container_width=True
-    )
-# ==================================================
-# GEOGRAPHY
-# ==================================================
-
-st.subheader("🌎 Geographic Intelligence")
-
-c1, c2, c3 = st.columns(3)
-
-with c1:
-    st.dataframe(
-        top_cities.to_pandas(),
-        use_container_width=True,
-        hide_index=True,
-        height=350
-    )
-
-with c2:
-    st.dataframe(
-        top_counties.to_pandas(),
-        use_container_width=True,
-        hide_index=True,
-        height=350
-    )
-
-with c3:
-    st.dataframe(
-        top_zips.to_pandas(),
-        use_container_width=True,
-        hide_index=True,
-        height=350
-    )
-
-# ==================================================
-# INFRASTRUCTURE
-# ==================================================
-
-left, right = st.columns(2)
-
-with left:
-
-    fig = px.bar(
-        utility_stats.to_pandas(),
-        x="len",
-        y="Electric Utility",
-        orientation="h",
-        title="Top Utilities"
-    )
-
-    st.plotly_chart(
-        fig,
-        use_container_width=True
+        width="stretch"
     )
 
 with right:
 
-    fig = px.pie(
-        cafv_stats.to_pandas(),
-        values="len",
-        names="Clean Alternative Fuel Vehicle (CAFV) Eligibility",
-        title="CAFV Eligibility"
+    fig = px.bar(
+        districts.to_pandas(),
+        x="Legislative District",
+        y="Vehicles",
+        color="Vehicles",
+        text="Vehicles",
+        title="Top Legislative Districts"
+    )
+
+    fig.update_traces(
+        textposition="outside"
     )
 
     st.plotly_chart(
         fig,
-        use_container_width=True
+        width="stretch"
     )
 
 # ==================================================
-# ANALYST COMMENTARY
+# UTILITIES
 # ==================================================
 
-top_city = top_cities.row(0)[0]
-top_county = top_counties.row(0)[0]
+utility_stats = (
+    df.group_by(
+        "Electric Utility"
+    )
+    .len()
+    .rename({"len": "Vehicles"})
+    .sort(
+        "Vehicles",
+        descending=True
+    )
+    .head(15)
+)
 
-st.subheader("📈 Automated Insights")
+fig = px.bar(
+    utility_stats.to_pandas(),
+    x="Vehicles",
+    y="Electric Utility",
+    orientation="h",
+    text="Vehicles",
+    color="Vehicles",
+    title="Top Utilities"
+)
+
+fig.update_traces(
+    textposition="outside"
+)
+
+st.plotly_chart(
+    fig,
+    width="stretch"
+)
+
+# ==================================================
+# COUNTIES + ZIPS
+# ==================================================
+
+left, right = st.columns(2)
+
+top_counties = (
+    df.group_by("County")
+    .len()
+    .rename({"len": "Vehicles"})
+    .sort(
+        "Vehicles",
+        descending=True
+    )
+    .head(20)
+)
+
+top_zips = (
+    df.group_by("Postal Code")
+    .len()
+    .rename({"len": "Vehicles"})
+    .sort(
+        "Vehicles",
+        descending=True
+    )
+    .head(20)
+)
+
+with left:
+
+    st.subheader(
+        "Top Counties"
+    )
+
+    st.dataframe(
+        top_counties.to_pandas(),
+        width="stretch",
+        hide_index=True,
+        height=400
+    )
+
+with right:
+
+    st.subheader(
+        "Top ZIP Codes"
+    )
+
+    st.dataframe(
+        top_zips.to_pandas(),
+        width="stretch",
+        hide_index=True,
+        height=400
+    )
+
+# ==================================================
+# ODOMETER
+# ==================================================
+
+st.subheader(
+    "🚘 Odometer Distribution"
+)
+
+odometer_df = (
+    df.filter(
+        pl.col(
+            "Odometer Reading"
+        ).is_not_null()
+    )
+)
+
+fig = px.histogram(
+    odometer_df.to_pandas(),
+    x="Odometer Reading",
+    nbins=50,
+    title="Mileage Distribution"
+)
+
+st.plotly_chart(
+    fig,
+    width="stretch"
+)
+
+# ==================================================
+# EXECUTIVE SUMMARY
+# ==================================================
+
+top_city = (
+    df.group_by("City")
+    .len()
+    .sort(
+        "len",
+        descending=True
+    )
+    .row(0)[0]
+)
+
+st.subheader(
+    "📈 Executive Summary"
+)
 
 st.success(
     f"""
-• {top_make[0]} is the leading EV manufacturer.
+• {top_make} is the leading EV manufacturer.
 
-• {top_model[0]} is the most registered model.
+• {top_model} is the most registered model.
 
-• Battery EVs represent {bev_pct}% of registrations.
+• {top_city} is the leading EV market.
 
-• Average vehicle range is {avg_range} miles.
+• Median transaction price is ${median_price:,.0f}.
 
-• {top_city} is the leading EV city.
+• Dataset contains {total_vehicles:,} vehicle transactions.
 
-• {top_county} is the leading EV county.
+• Covers {unique_cities:,} cities.
 
-• Data spans {unique_cities} cities and {unique_counties} counties.
+• Includes new and used vehicle registrations and transfer activity.
 """
 )
+
+# ==================================================
+# FOOTER
+# ==================================================
+
+show_footer()

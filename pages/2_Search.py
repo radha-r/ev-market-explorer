@@ -1,17 +1,6 @@
 import streamlit as st
-import pandas as pd
-
 from utils.data_loader import load_data
-
-# ==================================================
-# PAGE CONFIG
-# ==================================================
-
-st.set_page_config(
-    page_title="Vehicle Search",
-    page_icon="🚗",
-    layout="wide"
-)
+from utils.footer import show_footer
 
 st.title("🚗 Vehicle Search")
 
@@ -22,14 +11,12 @@ st.title("🚗 Vehicle Search")
 df = load_data()
 
 # ==================================================
-# SIDEBAR FILTERS
+# FILTERS
 # ==================================================
 
-st.sidebar.header("Filters")
+st.sidebar.header("Search")
 
-# -----------------------------
 # MAKE
-# -----------------------------
 
 makes = sorted(
     df["Make"]
@@ -43,22 +30,18 @@ selected_make = st.sidebar.selectbox(
     ["All"] + makes
 )
 
-# -----------------------------
-# MODEL
-# -----------------------------
+# MODEL (CASCADE)
 
-if selected_make == "All":
+model_df = df
 
-    model_source = df
+if selected_make != "All":
 
-else:
-
-    model_source = df.filter(
-        df["Make"] == selected_make
+    model_df = model_df.filter(
+        model_df["Make"] == selected_make
     )
 
 models = sorted(
-    model_source["Model"]
+    model_df["Model"]
     .drop_nulls()
     .unique()
     .to_list()
@@ -69,18 +52,13 @@ selected_model = st.sidebar.selectbox(
     ["All"] + models
 )
 
-# -----------------------------
 # YEAR
-# -----------------------------
 
 years = sorted(
-    [
-        int(y)
-        for y in df["Model Year"]
-        .drop_nulls()
-        .unique()
-        .to_list()
-    ],
+    df["Model Year"]
+    .drop_nulls()
+    .unique()
+    .to_list(),
     reverse=True
 )
 
@@ -89,9 +67,7 @@ selected_year = st.sidebar.selectbox(
     ["All"] + years
 )
 
-# -----------------------------
 # COUNTY
-# -----------------------------
 
 counties = sorted(
     df["County"]
@@ -105,9 +81,7 @@ selected_county = st.sidebar.selectbox(
     ["All"] + counties
 )
 
-# -----------------------------
 # CITY
-# -----------------------------
 
 cities = sorted(
     df["City"]
@@ -121,20 +95,32 @@ selected_city = st.sidebar.selectbox(
     ["All"] + cities
 )
 
-# -----------------------------
-# EV TYPE
-# -----------------------------
+# VEHICLE TYPE
 
-ev_types = sorted(
-    df["Electric Vehicle Type"]
+vehicle_types = sorted(
+    df["Clean Alternative Fuel Vehicle Type"]
     .drop_nulls()
     .unique()
     .to_list()
 )
 
-selected_ev_type = st.sidebar.selectbox(
+selected_type = st.sidebar.selectbox(
     "Vehicle Type",
-    ["All"] + ev_types
+    ["All"] + vehicle_types
+)
+
+# NEW / USED
+
+usage_types = sorted(
+    df["New or Used Vehicle"]
+    .drop_nulls()
+    .unique()
+    .to_list()
+)
+
+selected_usage = st.sidebar.selectbox(
+    "Condition",
+    ["All"] + usage_types
 )
 
 # ==================================================
@@ -144,98 +130,108 @@ selected_ev_type = st.sidebar.selectbox(
 filtered = df
 
 if selected_make != "All":
+
     filtered = filtered.filter(
         filtered["Make"] == selected_make
     )
 
 if selected_model != "All":
+
     filtered = filtered.filter(
         filtered["Model"] == selected_model
     )
 
 if selected_year != "All":
+
     filtered = filtered.filter(
         filtered["Model Year"] == selected_year
     )
 
 if selected_county != "All":
+
     filtered = filtered.filter(
         filtered["County"] == selected_county
     )
 
 if selected_city != "All":
+
     filtered = filtered.filter(
         filtered["City"] == selected_city
     )
 
-if selected_ev_type != "All":
+if selected_type != "All":
+
     filtered = filtered.filter(
-        filtered["Electric Vehicle Type"]
-        == selected_ev_type
+        filtered[
+            "Clean Alternative Fuel Vehicle Type"
+        ]
+        == selected_type
+    )
+
+if selected_usage != "All":
+
+    filtered = filtered.filter(
+        filtered["New or Used Vehicle"]
+        == selected_usage
     )
 
 # ==================================================
-# KPI SECTION
+# KPI ROW
 # ==================================================
 
 total_records = len(filtered)
 
-col1, col2, col3, col4 = st.columns(4)
 
-with col1:
-    st.metric(
-        "Matching Vehicles",
-        f"{total_records:,}"
-    )
+col1, col2, col3, col4, col5 = st.columns(5)
 
-with col2:
-    st.metric(
-        "Makes",
-        filtered["Make"].n_unique()
-    )
+col1.metric(
+    "Vehicles",
+    f"{total_records:,}"
+)
 
-with col3:
-    st.metric(
-        "Models",
-        filtered["Model"].n_unique()
-    )
+col2.metric(
+    "Makes",
+    filtered["Make"].n_unique()
+)
 
-with col4:
-    st.metric(
-        "Cities",
-        filtered["City"].n_unique()
-    )
+col3.metric(
+    "Models",
+    filtered["Model"].n_unique()
+)
+
+col4.metric(
+    "Cities",
+    filtered["City"].n_unique()
+)
+
 
 # ==================================================
-# DISPLAY DATA
+# DISPLAY DATASET
 # ==================================================
 
 display_df = filtered.select([
     "Model Year",
     "Make",
     "Model",
-    "Electric Vehicle Type",
+    "New or Used Vehicle",
+    "Odometer Reading",
+    "Sale Price",
     "Electric Range",
     "City",
     "County",
     "State",
-    "Postal Code"
+    "Postal Code",
+    "Transaction Type",
+    "Transaction Date",
 ])
 
-full_download_df = display_df.to_pandas()
+with col5:
+    download_df = display_df.to_pandas()
+    csv = download_df.to_csv(index=False)
 
-# ==================================================
-# DOWNLOAD BUTTON
-# ==================================================
-
-download_csv = full_download_df.to_csv(index=False)
-
-download_col, empty_col = st.columns([1, 5])
-
-with download_col:
     st.download_button(
-        "📥 Download CSV",
-        download_csv,
+        "📥 Download",
+        csv,
         file_name="vehicle_search_results.csv",
         mime="text/csv"
     )
@@ -244,24 +240,24 @@ with download_col:
 # SUMMARY
 # ==================================================
 
-if total_records > 0:
+# if total_records > 0:
 
-    top_city = (
-        filtered
-        .group_by("City")
-        .len()
-        .sort("len", descending=True)
-        .row(0)[0]
-    )
+#     top_city = (
+#         filtered
+#         .group_by("City")
+#         .len()
+#         .sort("len", descending=True)
+#         .row(0)[0]
+#     )
 
-    st.info(
-        f"""
-        Most represented city: **{top_city}**
-        """
-    )
+#     st.info(
+#         f"""
+#         {top_city} has more vehicles.
+#         """
+#     )
 
 # ==================================================
-# RESULTS TABLE
+# TABLE
 # ==================================================
 
 MAX_ROWS = 1000
@@ -272,18 +268,18 @@ table_df = (
     .to_pandas()
 )
 
-st.subheader("Search Results")
+#st.subheader("Search Results")
 
 st.caption(
     f"Showing first {min(MAX_ROWS, total_records):,} rows "
-    f"of {total_records:,} matching records."
+    f"of {total_records:,} matching vehicles."
 )
 
 st.dataframe(
     table_df,
-    use_container_width=True,
+    width="stretch",
     hide_index=True,
-    height=750
+    height=800
 )
 
 # ==================================================
@@ -291,6 +287,14 @@ st.dataframe(
 # ==================================================
 
 if total_records == 0:
+
     st.warning(
-        "No records found for the selected filters."
+        "No matching records found."
     )
+
+
+# ==================================================
+# FOOTER
+# ==================================================
+
+show_footer()
