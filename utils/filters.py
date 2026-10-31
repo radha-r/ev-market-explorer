@@ -1,3 +1,4 @@
+import polars as pl
 import streamlit as st
 
 
@@ -5,9 +6,9 @@ def apply_filters(df):
 
     st.sidebar.header("Filters")
 
-    # ---------------------------------
+    # =================================
     # YEAR
-    # ---------------------------------
+    # =================================
 
     years = sorted(
         df["Model Year"]
@@ -17,15 +18,14 @@ def apply_filters(df):
         reverse=True
     )
 
-    year = st.sidebar.multiselect(
+    selected_years = st.sidebar.multiselect(
         "Year",
-        options=years,
-        key="year_filter"
+        options=years
     )
 
-    # ---------------------------------
+    # =================================
     # STATE
-    # ---------------------------------
+    # =================================
 
     states = sorted(
         df["State"]
@@ -34,15 +34,56 @@ def apply_filters(df):
         .to_list()
     )
 
-    state = st.sidebar.multiselect(
+    selected_states = st.sidebar.multiselect(
         "State",
-        options=states,
-        key="state_filter"
+        options=states
     )
 
-    # ---------------------------------
+    # =================================
+    # COUNTY
+    # =================================
+
+    counties = sorted(
+        df["County"]
+        .drop_nulls()
+        .unique()
+        .to_list()
+    )
+
+    selected_counties = st.sidebar.multiselect(
+        "County",
+        options=counties
+    )
+
+    # =================================
+    # CITY (ONLY CASCADE FROM COUNTY)
+    # =================================
+
+    city_df = df
+
+    if selected_counties:
+
+        city_df = city_df.filter(
+            pl.col("County").is_in(
+                selected_counties
+            )
+        )
+
+    cities = sorted(
+        city_df["City"]
+        .drop_nulls()
+        .unique()
+        .to_list()
+    )
+
+    selected_cities = st.sidebar.multiselect(
+        "City",
+        options=cities
+    )
+
+    # =================================
     # MAKE
-    # ---------------------------------
+    # =================================
 
     makes = sorted(
         df["Make"]
@@ -51,21 +92,23 @@ def apply_filters(df):
         .to_list()
     )
 
-    make = st.sidebar.multiselect(
+    selected_makes = st.sidebar.multiselect(
         "Make",
-        options=makes,
-        key="make_filter"
+        options=makes
     )
 
-    # ---------------------------------
-    # MODEL (CASCADING)
-    # ---------------------------------
+    # =================================
+    # MODEL (ONLY CASCADE FROM MAKE)
+    # =================================
 
     model_df = df
 
-    if make:
+    if selected_makes:
+
         model_df = model_df.filter(
-            model_df["Make"].is_in(make)
+            pl.col("Make").is_in(
+                selected_makes
+            )
         )
 
     models = sorted(
@@ -75,34 +118,65 @@ def apply_filters(df):
         .to_list()
     )
 
-    model = st.sidebar.multiselect(
+    selected_models = st.sidebar.multiselect(
         "Model",
-        options=models,
-        key="model_filter"
+        options=models
     )
 
-    # ---------------------------------
+    # =================================
     # APPLY FILTERS
-    # ---------------------------------
+    # =================================
 
-    if year:
+    if selected_years:
+
         df = df.filter(
-            df["Model Year"].is_in(year)
+            pl.col("Model Year")
+            .is_in(selected_years)
         )
 
-    if state:
+    if selected_states:
+
         df = df.filter(
-            df["State"].is_in(state)
+            pl.col("State")
+            .is_in(selected_states)
         )
 
-    if make:
+    if selected_counties:
+
         df = df.filter(
-            df["Make"].is_in(make)
+            pl.col("County")
+            .is_in(selected_counties)
         )
 
-    if model:
+    if selected_cities:
+
         df = df.filter(
-            df["Model"].is_in(model)
+            pl.col("City")
+            .is_in(selected_cities)
         )
+
+    if selected_makes:
+
+        df = df.filter(
+            pl.col("Make")
+            .is_in(selected_makes)
+        )
+
+    if selected_models:
+
+        df = df.filter(
+            pl.col("Model")
+            .is_in(selected_models)
+        )
+
+    # =================================
+    # STATUS
+    # =================================
+
+    st.sidebar.divider()
+
+    st.sidebar.caption(
+        f"{len(df):,} matching vehicles"
+    )
 
     return df
