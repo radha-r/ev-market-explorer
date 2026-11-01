@@ -1,5 +1,5 @@
 import streamlit as st
-from core.data import load_data
+from core.data import load_data, show_metadata
 from core.filters import apply_filters
 from core.footer import show_footer
 
@@ -14,6 +14,7 @@ st.set_page_config(
 )
 
 st.title("🗺️ EV Registration Map")
+show_metadata()
 
 # ==================================================
 # LOAD DATA

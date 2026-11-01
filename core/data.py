@@ -14,9 +14,8 @@ through this module.
 
 import polars as pl
 import streamlit as st
-
-from config import PARQUET_PATH
-
+import json
+from config import PROCESSED_DIR, PARQUET_PATH
 
 @st.cache_data(show_spinner=False)
 def load_data() -> pl.DataFrame:
@@ -156,3 +155,47 @@ def unique_values(
         values = values.head(limit)
 
     return values.to_list()
+
+# ==================================================
+# Get Meta data for the data file
+# ==================================================
+
+def dataset_metadata():
+
+    metadata_file = (
+        PROCESSED_DIR /
+        "ev_metadata.json"
+    )
+
+    with open(
+        metadata_file,
+        encoding="utf-8"
+    ) as f:
+
+        return json.load(f)
+
+def show_metadata():
+
+    meta = dataset_metadata()
+    # col1, col2 = st.columns(2)
+
+    # col1.metric(
+    #     "Last Refresh",
+    #     meta["last_refresh"]
+    # )
+
+    # col2.metric(
+    #     "Available Data Window",
+    #     (
+    #         f"{meta['available_data_start']} "
+    #         f"to "
+    #         f"{meta['available_data_end']}"
+    #     )
+    # )
+
+    st.caption(
+        f"🕒 Last Refresh: {meta['last_refresh']} | "
+        f"📅 Available Data Window: "
+        f"{meta['available_data_start']} → "
+        f"{meta['available_data_end']}"
+    )    

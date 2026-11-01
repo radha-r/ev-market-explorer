@@ -1,8 +1,7 @@
 import polars as pl
 import plotly.express as px
 import streamlit as st
-
-from core.data import load_data
+from core.data import dataset_metadata, load_data, show_metadata
 from core.filters import apply_filters
 from core.footer import show_footer
 
@@ -11,6 +10,7 @@ from core.footer import show_footer
 # ==================================================
 
 st.title("⚡ EV Market Intelligence")
+show_metadata()
 
 df = load_data()
 df = apply_filters(df)

@@ -1,9 +1,10 @@
 import streamlit as st
-from core.data import load_data
+from core.data import load_data, show_metadata
 from core.footer import show_footer
 from core.logger import log_filter_change
 
 st.title("🚗 Vehicle Search")
+show_metadata()
 
 # ==================================================
 # LOAD DATA

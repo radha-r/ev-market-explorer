@@ -6,11 +6,8 @@ Examples
 
 Default output:
 
-    uv run python scripts/preprocess.py \
-        -i 20261030_ev_data.csv \
-        -g zip_lat_long.tsv
+    uv run python pipeline/preprocess.py -i 20261030_ev_data.csv -g zip_lat_long.tsv
         
-
 Creates:
 
     data/processed/ev_data.parquet
@@ -18,7 +15,7 @@ Creates:
 
 Custom output:
 
-    uv run python scripts/preprocess.py \
+    uv run python pipeline/preprocess.py \
         -i 20261030_ev_data.csv \
         -g zip_lat_long.tsv \
         -o ev_data_test.parquet
@@ -30,6 +27,8 @@ Creates:
 """
 
 import sys
+import json
+from datetime import datetime 
 from argparse import ArgumentParser
 from pathlib import Path
 
@@ -506,13 +505,48 @@ def main():
         / 1024
     )
 
+    # ==================================================
+    # WRITE META DATA 
+    # ==================================================
+
+    metadata = {
+        "last_refresh": datetime.now().strftime(
+            "%Y-%m-%d %H:%M:%S"
+        ),
+        "available_data_start": str(
+            df["Transaction Date"].min()
+        ),
+        "available_data_end": str(
+            df["Transaction Date"].max()
+        ),
+        "row_count": len(df),
+    }
+
+    metadata_file = (
+        PROCESSED_DIR /
+        "ev_metadata.json"
+    )
+
+    with open(
+        metadata_file,
+        "w",
+        encoding="utf-8"
+    ) as f:
+
+        json.dump(
+            metadata,
+            f,
+            indent=2
+        )
+
     print()
     print(f"Saved : {output_file}")
     print(f"Size  : {size_mb:.1f} MB")
+
+    print(f"Saved Metadata: {metadata_file}")
+
     print("Done")
 
-    print()
-    print("=" * 60)
 
     if args.report:
 
