@@ -1,6 +1,8 @@
 import inspect
 import json
 import uuid
+import logging
+import sys
 from pathlib import Path
 from datetime import datetime, timezone
 
@@ -53,7 +55,8 @@ def _write(event_type, page, params):
         "params": params,
     }
 
-    print(json.dumps(record))
+    #print(json.dumps(record))
+    logger.info(json.dumps(record))
 
 
 def log_page_visit():
@@ -87,3 +90,24 @@ def log_filter_change(filters):
         page=_page_name(),
         params=filters,
     )
+
+logger = logging.getLogger("ev-market-explorer")
+
+logger.setLevel(logging.INFO)
+
+handler = logging.StreamHandler(sys.stdout)
+
+handler.setFormatter(
+    logging.Formatter(
+        "%(asctime)s %(levelname)s %(message)s"
+    )
+)
+
+if not logger.handlers:
+    logger.addHandler(handler)
+
+logger.propagate = False
+
+#logger.info("Search page loaded")
+#logger.warning("Warning test")
+#logger.error("Error test")
