@@ -2,23 +2,11 @@ import streamlit as st
 
 
 def show_footer():
-
     st.divider()
+    st.caption(
+        "Insights are derived from public vehicle registration and transaction data and may not reflect current market conditions. "
+        "Please validate information with official sources before making purchasing, financial, or business decisions."
+        )
 
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        st.caption("EV Market Explorer")
-
-    with col2:
-        url = "https://forms.gle/f3EzwVXi5CyeGqe78"
-        st.markdown(f"""
-        <a href="{url}" target="_blank">
-        <button style="background-color:GreenYellow; padding:10px; border:none; border-radius:5px; cursor:pointer;">
-        Send Feedback
-        </button>
-        </a>
-        """, unsafe_allow_html=True)
-
-    with col3:
-        st.caption("Last Updated: Oct 31,2026")
+    st.write("Please feel free send your feedback about EV Market Explorer. Thanks.")
+    st.page_link("https://forms.gle/f3EzwVXi5CyeGqe78", label="Send Feedback", icon="🌎")
