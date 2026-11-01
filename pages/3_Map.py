@@ -1,7 +1,7 @@
 import streamlit as st
-
 from core.data import load_data
 from core.filters import apply_filters
+from core.footer import show_footer
 
 # ==================================================
 # PAGE CONFIG
@@ -195,3 +195,9 @@ with right:
         hide_index=True,
         height=450
     )
+
+# ==================================================
+# FOOTER
+# ==================================================
+
+show_footer()

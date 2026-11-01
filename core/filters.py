@@ -1,11 +1,10 @@
 import polars as pl
 import streamlit as st
-
+from core.logger import log_filter_change
 
 def apply_filters(df):
 
     st.sidebar.header("Filters")
-
     # =================================
     # YEAR
     # =================================
@@ -179,4 +178,14 @@ def apply_filters(df):
         f"{len(df):,} matching vehicles"
     )
 
+    log_filter_change(
+    {
+        "year": selected_years,
+        "state": selected_states,
+        "county": selected_counties,
+        "city": selected_cities,
+        "make": selected_makes,
+        "model": selected_models,
+    }
+    )
     return df

@@ -1,4 +1,5 @@
 import streamlit as st
+from core.footer import show_footer
 
 st.set_page_config(
     page_title="EV Market Explorer",
@@ -65,25 +66,6 @@ By using this application, you acknowledge that:
 - Results may not reflect current real-world conditions.
 - Information should not be treated as authoritative.
 - Any reliance on information provided by this application is entirely at your own risk.
-
----
-
-## Feedback
-
-This project is actively evolving.
-
-Bug reports, feature suggestions, data quality concerns, and feedback are welcome and help improve future releases.
 """)
 
-
-st.info(
-    """
-    Use the navigation menu on the left.
-
-    👉 Insights
-
-    👉 Search
-
-    👉 Map
-    """
-)
+show_footer()

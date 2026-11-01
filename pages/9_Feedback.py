@@ -1,4 +1,5 @@
 import streamlit as st
+from core.footer import show_footer
 
 st.title("💬 Feedback")
 
@@ -49,3 +50,5 @@ st.markdown("""
 - New dashboard ideas
 - Performance improvements
 """)
+
+show_footer()

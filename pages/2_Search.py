@@ -1,6 +1,7 @@
 import streamlit as st
 from core.data import load_data
 from core.footer import show_footer
+from core.logger import log_filter_change
 
 st.title("🚗 Vehicle Search")
 
@@ -237,26 +238,6 @@ with col5:
     )
 
 # ==================================================
-# SUMMARY
-# ==================================================
-
-# if total_records > 0:
-
-#     top_city = (
-#         filtered
-#         .group_by("City")
-#         .len()
-#         .sort("len", descending=True)
-#         .row(0)[0]
-#     )
-
-#     st.info(
-#         f"""
-#         {top_city} has more vehicles.
-#         """
-#     )
-
-# ==================================================
 # TABLE
 # ==================================================
 
@@ -267,8 +248,6 @@ table_df = (
     .head(MAX_ROWS)
     .to_pandas()
 )
-
-#st.subheader("Search Results")
 
 st.caption(
     f"Showing first {min(MAX_ROWS, total_records):,} rows "
@@ -298,3 +277,21 @@ if total_records == 0:
 # ==================================================
 
 show_footer()
+
+filters = {
+    "make": selected_make,
+    "model": selected_model,
+    "year": selected_year,
+    "county": selected_county,
+    "city": selected_city,
+    "vehicle_type": selected_type,
+    "condition": selected_usage,
+}
+
+filters = {
+    k: v
+    for k, v in filters.items()
+    if v != "All"
+}
+
+log_filter_change(filters)

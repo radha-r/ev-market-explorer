@@ -1,7 +1,9 @@
 import streamlit as st
-
+from core.logger import log_page_visit
 
 def show_footer():
+    log_page_visit()
+    
     st.divider()
     st.caption(
         "Insights are derived from public vehicle registration and transaction data and may not reflect current market conditions. "
@@ -10,3 +12,4 @@ def show_footer():
 
     st.write("Please feel free send your feedback about EV Market Explorer. Thanks.")
     st.page_link("https://forms.gle/f3EzwVXi5CyeGqe78", label="Send Feedback", icon="🌎")
+    
